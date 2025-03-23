@@ -4,6 +4,7 @@ import bgpic1 from "../assets/bgpic1.jpg";
 import bgpic2 from "../assets/bgpic2.jpg";
 import bgpic3 from "../assets/bgpic3.jpg";
 
+
 const Home = () => {
     const [textVisible, setTextVisible] = useState(false);
 
