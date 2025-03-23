@@ -40,6 +40,9 @@ const App = () => {
                         <button className="menu-button" onClick={toggleSidebar}>☰</button>
                     </div>
                     <Link to="/" className="logo">ANTI GAMBLING</Link>
+                    <div className="navbar-right">
+                        <SearchBar />
+                    </div>
                 </nav>
 
                 {/* Sidebar Navigation */}

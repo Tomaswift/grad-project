@@ -149,6 +149,18 @@ a {
   cursor: pointer;
 }
 
+.client-area-button {
+  background-color: #00d1b2;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-weight: bold;
+  transition: background-color 0.3s;
+}
+
+.client-area-button:hover {
+  background-color: #00bfa5;
+}
 
 /* Search Bar */
 .search-container {
@@ -614,7 +626,7 @@ a {
 .quitting-container {
   max-width: 1200px;
   width: 100%;
-  margin: 0 auto;
+  margin: 100px;
   position: relative;
   z-index: 2; /* Above the video */
 }

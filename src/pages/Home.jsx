@@ -1,5 +1,8 @@
-import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import {useState, useEffect} from "react";
+import {Link} from "react-router-dom";
+import bgpic1 from "./images/bgpic1.png";
+import bgpic2 from "./images/bgpic2.png";
+import bgpic3 from "./images/bgpic3.png";
 
 const Home = () => {
     const [textVisible, setTextVisible] = useState(false);
@@ -28,10 +31,14 @@ const Home = () => {
             <div className="black-section">
                 <div className="container">
                     <p className={`centered-paragraph ${textVisible ? "visible" : ""}`}>
-                        Gambling addiction affects millions worldwide, causing financial devastation, broken relationships, and mental health issues.
-                        Our mission is to provide transparent information about gambling mechanics, risks, and recovery paths.
-                        By understanding how gambling works and its psychological effects, we help individuals make informed choices
-                        and find support when struggling with addiction. ANTI Gambling is dedicated to education, prevention, and recovery,
+                        Gambling addiction affects millions worldwide, causing financial devastation, broken
+                        relationships, and mental health issues.
+                        Our mission is to provide transparent information about gambling mechanics, risks, and recovery
+                        paths.
+                        By understanding how gambling works and its psychological effects, we help individuals make
+                        informed choices
+                        and find support when struggling with addiction. ANTI Gambling is dedicated to education,
+                        prevention, and recovery,
                         challenging the gambling industry's glamorized portrayal with reality.
                     </p>
                 </div>
@@ -39,11 +46,12 @@ const Home = () => {
 
             <div className="portfolio-section">
                 <h2 className="section-title">How We Help Gambling</h2>
-                <p className="section-description">Discover our resources to understand gambling mechanics, risks, and support for recovery</p>
+                <p className="section-description">Discover our resources to understand gambling mechanics, risks, and
+                    support for recovery</p>
 
                 <div className="portfolio-grid">
                     <div className="portfolio-card">
-                        <img src="/src/assets/bgpic1.jpg" alt="Games" />
+                        <Image src={bgpic1}/>
                         <div className="portfolio-overlay">
                             <h3>GAMES</h3>
                             <Link to="/games" className="portfolio-link">View</Link>
@@ -51,7 +59,7 @@ const Home = () => {
                     </div>
 
                     <div className="portfolio-card">
-                        <img src="/src/assets/bgpic2.jpg" alt="Studies" />
+                        <Image src={bgpic2}/>
                         <div className="portfolio-overlay">
                             <h3>STUDIES</h3>
                             <Link to="/studies" className="portfolio-link">View</Link>
@@ -59,7 +67,7 @@ const Home = () => {
                     </div>
 
                     <div className="portfolio-card">
-                        <img src="/src/assets/bgpic3.jpg" alt="Quitting" />
+                        <Image src={bgpic3}/>
                         <div className="portfolio-overlay">
                             <h3>QUITTING</h3>
                             <Link to="/quitting" className="portfolio-link">View</Link>
