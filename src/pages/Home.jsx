@@ -1,8 +1,8 @@
 import {useState, useEffect} from "react";
 import {Link} from "react-router-dom";
-import bgpic1 from "./images/bgpic1.png";
-import bgpic2 from "./images/bgpic2.png";
-import bgpic3 from "./images/bgpic3.png";
+import bgpic1 from "../assets/bgpic1.jpg"
+import bgpic2 from "../assets/bgpic2.jpg"
+import bgpic3 from "../assets/bgpic3.jpg"
 
 const Home = () => {
     const [textVisible, setTextVisible] = useState(false);
