@@ -52,7 +52,7 @@ const Home = () => {
 
                 <div className="portfolio-grid">
                     <div className="portfolio-card">
-                        <Image src={bgpic1}/>
+                        <image src={bgpic1}/>
                         <div className="portfolio-overlay">
                             <h3>GAMES</h3>
                             <Link to="/games" className="portfolio-link">View</Link>
@@ -60,7 +60,7 @@ const Home = () => {
                     </div>
 
                     <div className="portfolio-card">
-                        <Image src={bgpic2}/>
+                        <image src={bgpic2}/>
                         <div className="portfolio-overlay">
                             <h3>STUDIES</h3>
                             <Link to="/studies" className="portfolio-link">View</Link>
@@ -68,7 +68,7 @@ const Home = () => {
                     </div>
 
                     <div className="portfolio-card">
-                        <Image src={bgpic3}/>
+                        <image src={bgpic3}/>
                         <div className="portfolio-overlay">
                             <h3>QUITTING</h3>
                             <Link to="/quitting" className="portfolio-link">View</Link>
