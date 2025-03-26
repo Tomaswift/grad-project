@@ -648,4 +648,69 @@
         font-size: 18px;
         padding: 15px 30px;
     }
+    /* Add to your SlotMachine.css file */
+
+.sticky-joker {
+    position: relative;
+    animation: pulse 1.5s infinite alternate;
+    box-shadow: 0 0 15px 5px rgba(255, 215, 0, 0.7);
+    z-index: 2;
+}
+
+.sticky-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.3);
+    color: gold;
+    font-weight: bold;
+    font-size: 14px;
+    border-radius: 5px;
+    text-shadow: 0 0 3px #000;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.05); }
+}
+
+/* Make sure other animations are defined correctly */
+.winning {
+    animation: win-pulse 0.5s infinite alternate;
+}
+
+@keyframes win-pulse {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.1); }
+}
+
+/* Animation for spinning reels */
+.reel.spinning .symbol {
+    animation: spin 0.1s infinite linear;
+}
+
+@keyframes spin {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(20px); }
+}
+
+/* Win message animation */
+.win-message.show {
+    animation: fadeIn 0.5s forwards, bounce 0.5s infinite alternate;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes bounce {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.1); }
+}
 }
