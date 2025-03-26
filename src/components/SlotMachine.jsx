@@ -20,7 +20,6 @@ const PAYLINES = [
     [4, 5, 6, 7], // Middle row
     [8, 9, 10, 11], // Bottom row
 
-    // Just showing a few examples - in a real 81 ways slot, all combinations would be defined
 ];
 
 const SlotMachine = () => {

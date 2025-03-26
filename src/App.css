@@ -372,11 +372,6 @@ a {
   z-index: 2; /* Above the video */
   width: 100%;
 }
-.portfolio-section image{
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
 
 .section-title {
   font-size: 42px;
@@ -631,7 +626,7 @@ a {
 .quitting-container {
   max-width: 1200px;
   width: 100%;
-  margin: 100px;
+  margin: 0 auto;
   position: relative;
   z-index: 2; /* Above the video */
 }
