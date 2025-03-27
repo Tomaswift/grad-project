@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import './SlotMachine.css';
-
 // Slot symbols with their respective values
 const SYMBOLS = [
     { id: 'joker', value: 'J', payout: 10, image: '/joker.png' },
@@ -20,6 +19,7 @@ const PAYLINES = [
     [4, 5, 6, 7], // Middle row
     [8, 9, 10, 11], // Bottom row
 
+    // Just showing a few examples - in a real 81 ways slot, all combinations would be defined
 ];
 
 const SlotMachine = () => {
@@ -50,12 +50,10 @@ const SlotMachine = () => {
     const audioRef = useRef(null);
     const spinSoundRef = useRef(null);
     const winSoundRef = useRef(null);
-
     // Get random symbol for the reels
     const getRandomSymbol = () => {
         return SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
     };
-
     // Function to check for winning combinations
     const checkWinnings = (newReels) => {
         let totalWin = 0;
@@ -116,7 +114,6 @@ const SlotMachine = () => {
             spinSoundRef.current.play().catch(e => console.log("Audio play failed:", e));
         }
     };
-
     // Function to play the win sound
     const playWinSound = () => {
         if (!isMuted && winSoundRef.current) {
@@ -124,24 +121,19 @@ const SlotMachine = () => {
             winSoundRef.current.play().catch(e => console.log("Audio play failed:", e));
         }
     };
-
     // Animation for spinning individual reels with delays
     const animateReels = async () => {
         const reelElements = document.querySelectorAll('.reel');
-
         // Sequential reel spinning
         for (let i = 0; i < reelElements.length; i++) {
             // Add spinning class to current reel
             reelElements[i].classList.add('spinning');
-
             // Wait for a short delay before stopping the current reel
             await new Promise(resolve => setTimeout(resolve, 300 + i * 200));
-
             // Stop the current reel
             reelElements[i].classList.remove('spinning');
         }
     };
-
     // Function to spin the reels
     const spin = async () => {
         if (isSpinning) return;
@@ -149,11 +141,9 @@ const SlotMachine = () => {
             setMessage("Not enough credits to spin!");
             return;
         }
-
         // Reset any previous win state
         setWinningSymbols([]);
         setShowWinMessage(false);
-
         // Play spin sound
         playSpinSound();
 
@@ -176,13 +166,10 @@ const SlotMachine = () => {
 
         // Set the reels with new symbols
         setReels(newReels);
-
         // Animate the reels
         await animateReels();
-
         // Check for wins after animation
         const { totalWin, winningLines, winningPositions } = checkWinnings(newReels);
-
         // Update game state with win results
         setIsSpinning(false);
         setWinAmount(totalWin);
@@ -193,7 +180,6 @@ const SlotMachine = () => {
             setWinningSymbols(winningPositions);
             setShowWinMessage(true);
             playWinSound();
-
             // Update statistics
             setStatistics(prev => ({
                 ...prev,
@@ -202,7 +188,6 @@ const SlotMachine = () => {
                 totalWon: prev.totalWon + totalWin,
                 returnToPlayer: ((prev.totalWon + totalWin) / (prev.totalWagered)) * 100
             }));
-
             // Hide win message after a delay
             setTimeout(() => {
                 setShowWinMessage(false);
