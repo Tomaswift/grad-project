@@ -29,7 +29,7 @@ const App = () => {
                 {/* Background Video */}
                 <div className="video-container">
                     <video autoPlay loop muted onError={(e) => console.error("Video error:", e)}>
-                        <source src="/Problem Gambling.mp4" type="video/mp4" />
+                        <source src="/bgvid1.mp4" type="video/mp4" />
                         Your browser does not support the video tag.
                     </video>
                 </div>
