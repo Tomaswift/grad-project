@@ -1,8 +1,8 @@
 import {useState, useEffect} from "react";
 import {Link} from "react-router-dom";
-import bgpic1 from "../assets/bgpic1.jpg";
-import bgpic2 from "../assets/bgpic2.jpg";
-import bgpic3 from "../assets/bgpic3.jpg";
+import bgpic1 from "../../public/bgpic1.jpg";
+import bgpic2 from "../../public/bgpic2.jpg";
+import bgpic3 from "../../public/bgpic3.jpg";
 
 
 const Home = () => {
@@ -52,7 +52,7 @@ const Home = () => {
 
                 <div className="portfolio-grid">
                     <div className="portfolio-card">
-                        <Image src={bgpic1}/>
+                        <Image src={bgpic1} />
                         <div className="portfolio-overlay">
                             <h3>GAMES</h3>
                             <Link to="/games" className="portfolio-link">View</Link>
