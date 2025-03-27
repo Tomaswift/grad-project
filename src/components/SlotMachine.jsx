@@ -1,26 +1,41 @@
 import { useState, useEffect, useRef } from 'react';
 import './SlotMachine.css';
-// Slot symbols with their respective values
+
+// Updated symbols with correct payout values according to the images
 const SYMBOLS = [
-    { id: 'joker', value: 'J', payout: 10, image: '/joker.png' },
-    { id: 'bell', value: 'B', payout: 8, image: '/bell.png' },
-    { id: 'watermelon', value: 'W', payout: 5, image: '/watermelon.png' },
-    { id: 'grapes', value: 'G', payout: 4, image: '/grapes.png' },
-    { id: 'plum', value: 'P', payout: 3, image: '/plum.png' },
-    { id: 'orange', value: 'O', payout: 2, image: '/orange.png' },
+    { id: 'joker', value: 'J', payout: 0, image: '/joker.png', isWild: true },
+    { id: 'bell', value: 'B', payout: 10, image: '/bell.png' },
+    { id: 'watermelon', value: 'W', payout: 6, image: '/watermelon.png' },
+    { id: 'grapes', value: 'G', payout: 6, image: '/grapes.png' },
+    { id: 'plum', value: 'P', payout: 4, image: '/plum.png' },
+    { id: 'orange', value: 'O', payout: 4, image: '/orange.png' },
     { id: 'lemon', value: 'L', payout: 2, image: '/lemon.png' },
-    { id: 'cherry', value: 'C', payout: 1, image: '/cherry.png' },
+    { id: 'cherry', value: 'C', payout: 2, image: '/cherry.png' },
 ];
 
-// Define paylines (81 ways to win)
-const PAYLINES = [
-    // Horizontal rows (3 rows)
-    [0, 1, 2, 3], // Top row
-    [4, 5, 6, 7], // Middle row
-    [8, 9, 10, 11], // Bottom row
+// Define symbol weights for realistic RNG (based on typical slot machine distributions)
+const SYMBOL_WEIGHTS = {
+    'joker': 5,    // Rare
+    'bell': 10,
+    'watermelon': 15,
+    'grapes': 15,
+    'plum': 20,
+    'orange': 20,
+    'lemon': 25,
+    'cherry': 25,  // Common
+};
 
-    // Just showing a few examples - in a real 81 ways slot, all combinations would be defined
-];
+// Structure to define all 81 ways to win
+// In a real "81 ways" slot, wins count matching symbols on adjacent reels
+// (3^4 = 81 possible combinations across 4 reels with 3 rows)
+const generateWayWins = () => {
+    // This generates all possible positions on each reel for ways wins
+    const wayWins = [];
+
+    // For a "ways" slot, we consider all possible symbol positions
+    // The 81 comes from 3^4 (3 possible positions on each of the 4 reels)
+    return wayWins;
+};
 
 const SlotMachine = () => {
     const [reels, setReels] = useState([
@@ -47,64 +62,159 @@ const SlotMachine = () => {
     });
     const [showStats, setShowStats] = useState(false);
     const [isMuted, setIsMuted] = useState(true);
+    const [stickyWildColumns, setStickyWildColumns] = useState([]);
+    const [respinMode, setRespinMode] = useState(false);
     const audioRef = useRef(null);
     const spinSoundRef = useRef(null);
     const winSoundRef = useRef(null);
-    // Get random symbol for the reels
+
+    // Get weighted random symbol
     const getRandomSymbol = () => {
-        return SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+        let totalWeight = 0;
+        Object.keys(SYMBOL_WEIGHTS).forEach(key => {
+            totalWeight += SYMBOL_WEIGHTS[key];
+        });
+
+        const random = Math.random() * totalWeight;
+        let weightSum = 0;
+
+        for (const key of Object.keys(SYMBOL_WEIGHTS)) {
+            weightSum += SYMBOL_WEIGHTS[key];
+            if (random <= weightSum) {
+                return SYMBOLS.find(symbol => symbol.id === key);
+            }
+        }
+
+        return SYMBOLS[7]; // Fallback to cherry
     };
-    // Function to check for winning combinations
+
+    // Function to check for winning combinations using the "ways" mechanic
     const checkWinnings = (newReels) => {
         let totalWin = 0;
         let winningLines = [];
         let winningPositions = [];
+        let hasJoker = false;
+        let jokerColumns = [];
 
-        // Flatten the reels into a 1D array for easier payline checking
-        const flatReels = [];
-        for (let row = 0; row < 3; row++) {
-            for (let reel = 0; reel < newReels.length; reel++) {
-                flatReels.push(newReels[reel][row]);
+        // Check each possible starting symbol on the first reel
+        for (let startRow = 0; startRow < 3; startRow++) {
+            const startSymbol = newReels[0][startRow];
+
+            // Track matched positions as potential winning ways
+            // For each starting position on reel 1, we'll track all matching paths
+            let matchedPaths = [{
+                positions: [startRow],
+                symbol: startSymbol.id === 'joker' ? null : startSymbol.id
+            }];
+
+            // If we start with a joker, we need to track that specially
+            if (startSymbol.id === 'joker') {
+                hasJoker = true;
+                if (!jokerColumns.includes(0)) {
+                    jokerColumns.push(0);
+                }
+                matchedPaths[0].isWild = true;
+            }
+
+            // For each subsequent reel, extend all current paths
+            for (let reel = 1; reel < 4; reel++) {
+                const nextPaths = [];
+
+                // For each current path, try to extend with symbols on the next reel
+                for (const path of matchedPaths) {
+                    const targetSymbol = path.symbol; // The symbol we're trying to match
+
+                    // Try each position on the current reel
+                    for (let row = 0; row < 3; row++) {
+                        const currentSymbol = newReels[reel][row];
+
+                        // Check if this symbol matches our path (or is wild, or path started with wild)
+                        if (currentSymbol.id === 'joker' ||
+                            currentSymbol.id === targetSymbol ||
+                            targetSymbol === null) {
+
+                            // Create a new path extending the current one
+                            const newPath = {
+                                positions: [...path.positions, row],
+                                symbol: targetSymbol === null && currentSymbol.id !== 'joker'
+                                    ? currentSymbol.id
+                                    : targetSymbol,
+                                isWild: path.isWild || currentSymbol.id === 'joker'
+                            };
+
+                            // If we found a joker on this reel
+                            if (currentSymbol.id === 'joker') {
+                                hasJoker = true;
+                                if (!jokerColumns.includes(reel)) {
+                                    jokerColumns.push(reel);
+                                }
+                            }
+
+                            nextPaths.push(newPath);
+                        }
+                    }
+                }
+
+                // If no extensions were possible, this way can't win
+                if (nextPaths.length === 0) {
+                    break;
+                }
+
+                matchedPaths = nextPaths;
+            }
+
+            // Check if any of our paths made it all the way across (minimum 3 reels for a win)
+            for (const path of matchedPaths) {
+                if (path.positions.length >= 3 && path.symbol !== null) {
+                    // We have a win!
+                    const symbolObj = SYMBOLS.find(s => s.id === path.symbol);
+                    if (!symbolObj) continue;
+
+                    // Calculate payout based on the number of symbols and the symbol's value
+                    // The paytable from the images shows different multipliers for 3 or 4 matches
+                    const numSymbols = path.positions.length;
+                    let multiplier = 0;
+
+                    // Set multiplier based on paytable values from image 6
+                    if (path.symbol === 'bell') {
+                        multiplier = numSymbols === 3 ? 5 : 10;
+                    } else if (path.symbol === 'watermelon' || path.symbol === 'grapes') {
+                        multiplier = numSymbols === 3 ? 3 : 6;
+                    } else if (path.symbol === 'plum' || path.symbol === 'orange') {
+                        multiplier = numSymbols === 3 ? 2 : 4;
+                    } else if (path.symbol === 'lemon' || path.symbol === 'cherry') {
+                        multiplier = numSymbols === 3 ? 1 : 2;
+                    }
+
+                    const win = bet * multiplier;
+
+                    // If we have a win, add it to our totals
+                    if (win > 0) {
+                        totalWin += win;
+
+                        // Add winning positions to highlight
+                        for (let i = 0; i < path.positions.length; i++) {
+                            const posIndex = i * 3 + path.positions[i];
+                            winningPositions.push(posIndex);
+                        }
+
+                        winningLines.push({
+                            symbols: path.symbol,
+                            count: path.positions.length,
+                            win: win
+                        });
+                    }
+                }
             }
         }
 
-        // Check each payline
-        PAYLINES.forEach((payline, index) => {
-            const symbolsOnLine = payline.map(pos => flatReels[pos]);
-
-            // Get the first symbol to compare others against
-            const firstSymbol = symbolsOnLine[0];
-
-            // Count how many matching symbols we have starting from the left
-            let matchingCount = 1;
-            for (let i = 1; i < symbolsOnLine.length; i++) {
-                if (symbolsOnLine[i].id === firstSymbol.id || symbolsOnLine[i].id === 'joker' || firstSymbol.id === 'joker') {
-                    matchingCount++;
-                } else {
-                    break;
-                }
-            }
-
-            // Calculate win based on matching symbols (minimum 3 for a win)
-            if (matchingCount >= 3) {
-                const baseSymbol = firstSymbol.id === 'joker' && symbolsOnLine[1].id !== 'joker' ? symbolsOnLine[1] : firstSymbol;
-                const lineWin = baseSymbol.payout * bet * (matchingCount - 2); // Higher multiplier for more matches
-                totalWin += lineWin;
-
-                winningLines.push({
-                    line: index + 1,
-                    symbols: matchingCount,
-                    win: lineWin
-                });
-
-                // Add winning positions to highlight
-                for (let i = 0; i < matchingCount; i++) {
-                    winningPositions.push(payline[i]);
-                }
-            }
-        });
-
-        return { totalWin, winningLines, winningPositions };
+        return {
+            totalWin,
+            winningLines,
+            winningPositions,
+            hasJoker,
+            jokerColumns
+        };
     };
 
     // Function to play the spin sound
@@ -114,6 +224,7 @@ const SlotMachine = () => {
             spinSoundRef.current.play().catch(e => console.log("Audio play failed:", e));
         }
     };
+
     // Function to play the win sound
     const playWinSound = () => {
         if (!isMuted && winSoundRef.current) {
@@ -121,55 +232,116 @@ const SlotMachine = () => {
             winSoundRef.current.play().catch(e => console.log("Audio play failed:", e));
         }
     };
+
     // Animation for spinning individual reels with delays
-    const animateReels = async () => {
+    const animateReels = async (columnsToSpin) => {
         const reelElements = document.querySelectorAll('.reel');
-        // Sequential reel spinning
+
+        // Add spinning class to the reels we're spinning
         for (let i = 0; i < reelElements.length; i++) {
-            // Add spinning class to current reel
-            reelElements[i].classList.add('spinning');
-            // Wait for a short delay before stopping the current reel
-            await new Promise(resolve => setTimeout(resolve, 300 + i * 200));
-            // Stop the current reel
-            reelElements[i].classList.remove('spinning');
+            if (columnsToSpin.includes(i)) {
+                reelElements[i].classList.add('spinning');
+            }
+        }
+
+        // Sequential reel stopping
+        for (let i = 0; i < reelElements.length; i++) {
+            if (columnsToSpin.includes(i)) {
+                // Wait for a short delay before stopping the current reel
+                await new Promise(resolve => setTimeout(resolve, 300 + i * 200));
+                // Stop the current reel
+                reelElements[i].classList.remove('spinning');
+            }
         }
     };
+
     // Function to spin the reels
-    const spin = async () => {
+    const spin = async (columnsToSpin = [0, 1, 2, 3]) => {
         if (isSpinning) return;
-        if (credits < bet) {
+
+        const isRespin = columnsToSpin.length < 4;
+
+        // Force reset respin mode if we're doing a full spin
+        if (!isRespin) {
+            setStickyWildColumns([]);
+            setRespinMode(false);
+        }
+
+        if (!isRespin && credits < bet) {
             setMessage("Not enough credits to spin!");
             return;
         }
+
         // Reset any previous win state
         setWinningSymbols([]);
         setShowWinMessage(false);
+
         // Play spin sound
         playSpinSound();
 
-        // Update statistics
-        setStatistics(prev => ({
-            ...prev,
-            spins: prev.spins + 1,
-            totalWagered: prev.totalWagered + bet
-        }));
+        // Update statistics (only on main spins, not respins)
+        if (!isRespin) {
+            setStatistics(prev => ({
+                ...prev,
+                spins: prev.spins + 1,
+                totalWagered: prev.totalWagered + bet
+            }));
 
-        setCredits(prevCredits => prevCredits - bet);
+            // Deduct bet only on main spins
+            setCredits(prevCredits => prevCredits - bet);
+        }
+
         setWinAmount(0);
         setMessage("Spinning...");
         setIsSpinning(true);
 
-        // Generate new random reels
-        const newReels = Array(4).fill(0).map(() =>
-            Array(3).fill(0).map(() => getRandomSymbol())
-        );
+        // Generate new random reels, but keep sticky wilds in place
+        const newReels = [...reels];
+
+        // For each reel that is spinning, generate new symbols
+        for (let col of columnsToSpin) {
+            for (let row = 0; row < 3; row++) {
+                // Only change if it's not a sticky wild in respin mode
+                if (!isRespin || !stickyWildColumns.includes(col)) {
+                    newReels[col][row] = getRandomSymbol();
+                }
+            }
+        }
 
         // Set the reels with new symbols
         setReels(newReels);
+
         // Animate the reels
-        await animateReels();
+        await animateReels(columnsToSpin);
+
         // Check for wins after animation
-        const { totalWin, winningLines, winningPositions } = checkWinnings(newReels);
+        const { totalWin, winningLines, winningPositions, hasJoker, jokerColumns } = checkWinnings(newReels);
+
+        // Update winning positions for highlighting
+        setWinningSymbols(winningPositions);
+
+        // Determine if we need a respin
+        let needsRespin = false;
+
+        // If we have jokers and we're not already in a respin
+        if (hasJoker && !isRespin) {
+            needsRespin = true;
+            setStickyWildColumns(jokerColumns);
+            setRespinMode(true);
+        } else if (isRespin) {
+            // If this was a respin, check if we need another one
+            if (hasJoker && jokerColumns.some(col => !stickyWildColumns.includes(col))) {
+                // Found new jokers, update sticky columns
+                const newStickyColumns = [...new Set([...stickyWildColumns, ...jokerColumns])];
+                setStickyWildColumns(newStickyColumns);
+                needsRespin = true;
+            } else if (!hasJoker || jokerColumns.every(col => stickyWildColumns.includes(col))) {
+                // No new jokers, prepare to end respin mode
+                // We'll fully reset in the block below to ensure proper state management
+                needsRespin = false;
+            }
+        }
+
         // Update game state with win results
         setIsSpinning(false);
         setWinAmount(totalWin);
@@ -177,9 +349,9 @@ const SlotMachine = () => {
         if (totalWin > 0) {
             setCredits(prevCredits => prevCredits + totalWin);
             setMessage(`You won ${totalWin} credits on ${winningLines.length} line(s)!`);
-            setWinningSymbols(winningPositions);
             setShowWinMessage(true);
             playWinSound();
+
             // Update statistics
             setStatistics(prev => ({
                 ...prev,
@@ -188,19 +360,40 @@ const SlotMachine = () => {
                 totalWon: prev.totalWon + totalWin,
                 returnToPlayer: ((prev.totalWon + totalWin) / (prev.totalWagered)) * 100
             }));
+
             // Hide win message after a delay
             setTimeout(() => {
                 setShowWinMessage(false);
             }, 3000);
         } else {
-            setMessage("No win this time. Try again!");
+            setMessage(isRespin ? "No additional win on respin." : "No win this time. Try again!");
 
-            // Update statistics
-            setStatistics(prev => ({
-                ...prev,
-                losses: prev.losses + 1,
-                returnToPlayer: (prev.totalWon / prev.totalWagered) * 100
-            }));
+            // Update statistics (only on main spins)
+            if (!isRespin) {
+                setStatistics(prev => ({
+                    ...prev,
+                    losses: prev.losses + 1,
+                    returnToPlayer: (prev.totalWon / prev.totalWagered) * 100
+                }));
+            }
+        }
+
+        // Automatically trigger respin if needed
+        if (needsRespin) {
+            // Create an array of columns to spin (all except those with sticky wilds)
+            const columnsToRespin = [0, 1, 2, 3].filter(col => !stickyWildColumns.includes(col));
+
+            setMessage("Respin triggered by Joker! Wild symbols remain in place.");
+
+            // Short delay before respin
+            setTimeout(() => {
+                spin(columnsToRespin);
+            }, 1500);
+        } else if (isRespin) {
+            // This was the final respin in the sequence, properly reset respin mode
+            setStickyWildColumns([]);
+            setRespinMode(false);
+            setMessage("Respin complete. Spin again to continue.");
         }
     };
 
@@ -208,14 +401,14 @@ const SlotMachine = () => {
     const changeBet = (amount) => {
         if (isSpinning) return;
 
-        const newBet = Math.max(1, Math.min(100, bet + amount));
+        const newBet = Math.max(1, Math.min(500, bet + amount)); // Max bet from the game rules is 500 CZK
         setBet(newBet);
     };
 
     // Function to set max bet
     const setMaxBet = () => {
         if (isSpinning) return;
-        setBet(100); // Setting max bet to 100 for demo purposes
+        setBet(Math.min(500, credits)); // Max bet is 500 according to the rules
     };
 
     // Auto-play mode
@@ -258,6 +451,14 @@ const SlotMachine = () => {
     const isWinningSymbol = (reelIndex, symbolIndex) => {
         const position = reelIndex * 3 + symbolIndex;
         return winningSymbols.includes(position);
+    };
+
+    // Helper function to determine if a symbol is a sticky wild
+    const isStickyWild = (reelIndex, symbolIndex) => {
+        if (!respinMode) return false;
+
+        return stickyWildColumns.includes(reelIndex) &&
+            reels[reelIndex][symbolIndex].id === 'joker';
     };
 
     return (
@@ -312,7 +513,7 @@ const SlotMachine = () => {
                             {reel.map((symbol, symbolIndex) => (
                                 <div
                                     key={`${reelIndex}-${symbolIndex}`}
-                                    className={`symbol ${isWinningSymbol(reelIndex, symbolIndex) ? 'winning' : ''}`}
+                                    className={`symbol ${isWinningSymbol(reelIndex, symbolIndex) ? 'winning' : ''} ${isStickyWild(reelIndex, symbolIndex) ? 'sticky-wild' : ''}`}
                                 >
                                     <img src={symbol.image} alt={symbol.value} className="symbol-img" />
                                 </div>
@@ -331,6 +532,13 @@ const SlotMachine = () => {
                 <div className={`win-message ${showWinMessage ? 'show' : ''}`}>
                     WIN! {winAmount} CREDITS
                 </div>
+
+                {/* Respin Message */}
+                {respinMode && (
+                    <div className="respin-message show">
+                        JOKER RESPIN ACTIVE
+                    </div>
+                )}
             </div>
 
             {/* Controls Panel */}
@@ -343,9 +551,17 @@ const SlotMachine = () => {
                 <div className="bet-controls">
                     <div className="control-label">BET IN CZK</div>
                     <div className="bet-control-group">
-                        <button className="bet-button decrease" onClick={() => changeBet(-5)}>-</button>
+                        <button
+                            className="bet-button decrease"
+                            onClick={() => changeBet(-5)}
+                            disabled={isSpinning || respinMode}
+                        >-</button>
                         <div className="control-value">{bet.toFixed(2)}</div>
-                        <button className="bet-button increase" onClick={() => changeBet(5)}>+</button>
+                        <button
+                            className="bet-button increase"
+                            onClick={() => changeBet(5)}
+                            disabled={isSpinning || respinMode}
+                        >+</button>
                     </div>
                 </div>
 
@@ -354,13 +570,17 @@ const SlotMachine = () => {
                     <div className="control-value">{winAmount > 0 ? winAmount.toFixed(2) : ''}</div>
                 </div>
 
-                <button className="max-bet-button" onClick={setMaxBet}>
+                <button
+                    className="max-bet-button"
+                    onClick={setMaxBet}
+                    disabled={isSpinning}
+                >
                     MAX BET
                 </button>
 
                 <button
                     className="spin-button"
-                    onClick={spin}
+                    onClick={() => spin()}
                     disabled={isSpinning || credits < bet}
                 >
                     <div className="spin-icon"></div>
@@ -369,7 +589,7 @@ const SlotMachine = () => {
                 <button
                     className="auto-spin-button"
                     onClick={() => setAutoPlay(!autoPlay)}
-                    disabled={credits < bet}
+                    disabled={credits < bet || isSpinning}
                 >
                     <div className="auto-spin-icon"></div>
                 </button>
@@ -401,6 +621,11 @@ const SlotMachine = () => {
                             Unlike traditional paylines, wins are calculated by matching symbols on adjacent reels
                             starting from the leftmost reel.
                         </p>
+                        <p>
+                            The Joker symbol is wild and triggers the Sticky Wild Respin feature. When a Joker appears
+                            and is part of a winning combination, it remains in place for free respins until no new
+                            Jokers appear.
+                        </p>
                     </div>
 
                     <div className="edu-section">
@@ -408,8 +633,8 @@ const SlotMachine = () => {
                         <p>
                             Every spin uses a Random Number Generator (RNG) to determine outcomes.
                             The theoretical Return to Player (RTP) for this type of game is typically
-                            between 95-96%, meaning that for every 100 CZK wagered, the machine is
-                            designed to pay back 95-96 CZK on average over millions of spins.
+                            between 88.03-98.05% (as stated in the rules), meaning that for every 100 CZK wagered,
+                            the machine is designed to pay back 88-98 CZK on average over millions of spins.
                         </p>
                         <p>
                             Your current RTP: {statistics.returnToPlayer.toFixed(2)}% after {statistics.spins} spins

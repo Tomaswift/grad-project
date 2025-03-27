@@ -649,3 +649,117 @@
         padding: 15px 30px;
     }
 }
+/* Sticky Wild and Respin Styles */
+.sticky-wild {
+    position: relative;
+    box-shadow: 0 0 15px #ffcc00, 0 0 25px #ffaa00;
+    animation: pulse 1.5s infinite alternate;
+    z-index: 10;
+    border-radius: 5px;
+}
+
+.sticky-wild::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 3px solid #ffcc00;
+    border-radius: 5px;
+    animation: border-pulse 1.5s infinite alternate;
+    z-index: -1;
+}
+
+.sticky-wild .symbol-img {
+    transform: scale(1.05);
+    transition: transform 0.3s ease;
+}
+
+.respin-message {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(255, 180, 0, 0.9);
+    color: #000;
+    font-weight: bold;
+    font-size: 1.2rem;
+    padding: 8px 16px;
+    border-radius: 20px;
+    box-shadow: 0 0 10px rgba(255, 180, 0, 0.8);
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+    z-index: 20;
+}
+
+.respin-message.show {
+    opacity: 1;
+    animation: flash 1.5s infinite alternate;
+}
+
+/* Animation for the sticky wild pulse effect */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 15px #ffcc00, 0 0 25px #ffaa00;
+    }
+    100% {
+        box-shadow: 0 0 20px #ffcc00, 0 0 30px #ffaa00, 0 0 40px rgba(255, 204, 0, 0.5);
+    }
+}
+
+@keyframes border-pulse {
+    0% {
+        border-color: #ffcc00;
+    }
+    100% {
+        border-color: #ff8800;
+    }
+}
+
+@keyframes flash {
+    0% {
+        background-color: rgba(255, 180, 0, 0.9);
+        box-shadow: 0 0 10px rgba(255, 180, 0, 0.8);
+    }
+    100% {
+        background-color: rgba(255, 140, 0, 0.9);
+        box-shadow: 0 0 15px rgba(255, 140, 0, 0.8), 0 0 25px rgba(255, 100, 0, 0.4);
+    }
+}
+
+/* Additional styling for the spinning reels */
+.reel {
+    transition: transform 0.1s ease;
+}
+
+.reel.spinning {
+    animation: spin-blur 0.2s infinite alternate;
+}
+
+@keyframes spin-blur {
+    0% {
+        filter: blur(0px);
+    }
+    100% {
+        filter: blur(3px);
+    }
+}
+
+/* Adjustments to control panel during respin mode */
+.controls-panel button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Add a glow to the entire slot frame during respin mode */
+.slot-frame.respin-active {
+    box-shadow: 0 0 20px rgba(255, 204, 0, 0.3);
+}
+
+/* Make sure the Joker symbol stands out */
+.symbol[data-symbol="joker"] img,
+.symbol img[alt="J"] {
+    filter: drop-shadow(0 0 5px gold);
+}
+
