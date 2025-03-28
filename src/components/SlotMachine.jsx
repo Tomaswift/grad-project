@@ -67,6 +67,7 @@ const SlotMachine = () => {
     const audioRef = useRef(null);
     const spinSoundRef = useRef(null);
     const winSoundRef = useRef(null);
+    const reelStopSoundRef = useRef(null);
 
     // Get weighted random symbol
     const getRandomSymbol = () => {
@@ -233,26 +234,96 @@ const SlotMachine = () => {
         }
     };
 
-    // Animation for spinning individual reels with delays
+    // Function to play reel stop sound
+    const playReelStopSound = () => {
+        if (!isMuted && reelStopSoundRef.current) {
+            reelStopSoundRef.current.currentTime = 0;
+            reelStopSoundRef.current.play().catch(e => console.log("Audio play failed:", e));
+        }
+    };
+
+    // Updated animation for spinning individual reels with sequential scrolling
     const animateReels = async (columnsToSpin) => {
+        // Get all reel elements
         const reelElements = document.querySelectorAll('.reel');
 
-        // Add spinning class to the reels we're spinning
+        // Clear any existing animations and classes
+        reelElements.forEach(reel => {
+            reel.classList.remove('spinning', 'stopping-reel-0', 'stopping-reel-1',
+                'stopping-reel-2', 'stopping-reel-3', 'spinning-reel-0',
+                'spinning-reel-1', 'spinning-reel-2', 'spinning-reel-3');
+        });
+
+        // Function to create a virtual reel strip
+        const createVirtualReelStrip = (reelIndex) => {
+            const reelElement = reelElements[reelIndex];
+            const symbolContainer = reelElement.querySelector('.symbol-container');
+
+            if (!symbolContainer) return; // Safety check
+
+            // Clear any existing virtual symbols
+            const existingVirtuals = reelElement.querySelectorAll('.virtual-symbol');
+            existingVirtuals.forEach(el => el.remove());
+
+            // Create 10 virtual symbols for smooth scrolling
+            for (let i = 0; i < 10; i++) {
+                const randomSymbol = getRandomSymbol();
+                const virtualSymbol = document.createElement('div');
+                virtualSymbol.className = 'virtual-symbol';
+                virtualSymbol.style.top = `${-100 - (i * 100)}px`; // Position above visible area
+
+                const img = document.createElement('img');
+                img.src = randomSymbol.image;
+                img.alt = randomSymbol.value;
+                img.className = 'symbol-img';
+
+                virtualSymbol.appendChild(img);
+                symbolContainer.prepend(virtualSymbol);
+            }
+        };
+
+        // Start spinning reels sequentially
         for (let i = 0; i < reelElements.length; i++) {
             if (columnsToSpin.includes(i)) {
-                reelElements[i].classList.add('spinning');
+                // Short delay before starting each reel
+                await new Promise(resolve => setTimeout(resolve, i * 200));
+
+                // Create virtual reel strip for animation
+                createVirtualReelStrip(i);
+
+                // Add spinning class
+                reelElements[i].classList.add(`spinning-reel-${i}`);
+
+                // Play spin sound for first reel only (to avoid sound overlap)
+                if (i === columnsToSpin[0]) {
+                    playSpinSound();
+                }
             }
         }
 
-        // Sequential reel stopping
+        // Stop the reels sequentially
         for (let i = 0; i < reelElements.length; i++) {
             if (columnsToSpin.includes(i)) {
-                // Wait for a short delay before stopping the current reel
-                await new Promise(resolve => setTimeout(resolve, 300 + i * 200));
-                // Stop the current reel
-                reelElements[i].classList.remove('spinning');
+                // Wait before stopping each reel
+                await new Promise(resolve => setTimeout(resolve, 700 + (i * 300)));
+
+                // Remove spinning class and add stopping class
+                reelElements[i].classList.remove(`spinning-reel-${i}`);
+                reelElements[i].classList.add(`stopping-reel-${i}`);
+
+                // Play reel stop sound
+                playReelStopSound();
+
+                // Update actual symbols after the stopping animation completes
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                // Remove the stopping class
+                reelElements[i].classList.remove(`stopping-reel-${i}`);
             }
         }
+
+        // Final delay to ensure all animations are complete
+        await new Promise(resolve => setTimeout(resolve, 300));
     };
 
     // Function to spin the reels
@@ -275,9 +346,6 @@ const SlotMachine = () => {
         // Reset any previous win state
         setWinningSymbols([]);
         setShowWinMessage(false);
-
-        // Play spin sound
-        playSpinSound();
 
         // Update statistics (only on main spins, not respins)
         if (!isRespin) {
@@ -475,6 +543,10 @@ const SlotMachine = () => {
                 <source src="/win-sound.mp3" type="audio/mp3" />
             </audio>
 
+            <audio ref={reelStopSoundRef}>
+                <source src="/reel-stop.mp3" type="audio/mp3" />
+            </audio>
+
             {/* Jackpot Display */}
             <div className="slot-header">
                 <div className="jackpot-display">
@@ -499,7 +571,7 @@ const SlotMachine = () => {
             </div>
 
             {/* Slot Machine Frame */}
-            <div className="slot-frame">
+            <div className={`slot-frame ${respinMode ? 'respin-active' : ''}`}>
                 {/* Side Labels */}
                 <div className="side-label left">
                     <div className="paylines-number">81</div>
@@ -509,15 +581,20 @@ const SlotMachine = () => {
                 {/* Reels */}
                 <div className="slot-reels">
                     {reels.map((reel, reelIndex) => (
-                        <div key={reelIndex} className="reel">
-                            {reel.map((symbol, symbolIndex) => (
-                                <div
-                                    key={`${reelIndex}-${symbolIndex}`}
-                                    className={`symbol ${isWinningSymbol(reelIndex, symbolIndex) ? 'winning' : ''} ${isStickyWild(reelIndex, symbolIndex) ? 'sticky-wild' : ''}`}
-                                >
-                                    <img src={symbol.image} alt={symbol.value} className="symbol-img" />
-                                </div>
-                            ))}
+                        <div key={reelIndex} className="reel" id={`reel-${reelIndex}`}>
+                            <div className="symbol-container">
+                                {reel.map((symbol, symbolIndex) => (
+                                    <div
+                                        key={`${reelIndex}-${symbolIndex}`}
+                                        className={`symbol ${isWinningSymbol(reelIndex, symbolIndex) ? 'winning' : ''} ${isStickyWild(reelIndex, symbolIndex) ? 'sticky-wild' : ''}`}
+                                        data-symbol={symbol.id}
+                                        style={{position: 'absolute', top: `${symbolIndex * 100}px`}}
+                                    >
+                                        <img src={symbol.image} alt={symbol.value} className="symbol-img" />
+                                    </div>
+                                ))}
+                                {/* Virtual symbols will be added here dynamically */}
+                            </div>
                         </div>
                     ))}
                 </div>
@@ -554,13 +631,13 @@ const SlotMachine = () => {
                         <button
                             className="bet-button decrease"
                             onClick={() => changeBet(-5)}
-                            disabled={isSpinning || respinMode}
+                            disabled={isSpinning}
                         >-</button>
                         <div className="control-value">{bet.toFixed(2)}</div>
                         <button
                             className="bet-button increase"
                             onClick={() => changeBet(5)}
-                            disabled={isSpinning || respinMode}
+                            disabled={isSpinning}
                         >+</button>
                     </div>
                 </div>

@@ -623,12 +623,13 @@ a {
 .studies-container,
 .effects-container,
 .quitting-container {
-  background: rgba(0, 0, 0, 0.5);
+  background: black;
   border-radius: 10px;
   padding: 100px;
   max-width: 1200px;
   width: 100%;
   margin: 0 auto;
+  margin-top: 100px;
   position: relative;
   z-index: 2; /* Above the video */
 }
